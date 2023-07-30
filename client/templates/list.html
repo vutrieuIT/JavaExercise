@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <title>List</title>
+    <!-- todo sửa link bên intelij -->
+
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
     <link rel="stylesheet" href="../resources/css/style.css" />
     <style>
       input {
@@ -13,6 +19,7 @@
   </head>
   <body>
     <div class="container">
+      <!-- Modal -->
       <div class="modal" id="errorModal">
         <p id="errorMessage"></p>
       </div>
@@ -66,5 +73,281 @@
 
       <div class="pagination"></div>
     </div>
+
+    <!-- script js -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../resources/js/script.js"></script>
+    <script>
+      let studentList = [];
+      const itemsPerPage = 5;
+      const rowHeader = [
+        "No",
+        "Code",
+        "Name",
+        "Birthday",
+        "Address",
+        "Score",
+        "Edit",
+      ];
+      var currentPage = 1;
+
+      // Gọi hàm lấy dữ liệu sinh viên khi trang được tải
+      document.addEventListener("DOMContentLoaded", function () {
+        fetchData();
+        renderUser();
+      });
+
+      function fetchData() {
+        // Sử dụng Fetch API để gọi API lấy dữ liệu sinh viên
+        fetch("http://localhost:8080/student")
+          .then((response) => response.json()) // Chuyển đổi dữ liệu nhận được thành đối tượng JSON
+          .then((responseData) => {
+            // lưu data
+            studentList = responseData;
+            renderPage(studentList, 1);
+            renderPaginationButtons(studentList);
+            document.getElementById("page1").classList.add("active");
+          })
+          .catch((error) => {
+            console.error("Lỗi khi lấy dữ liệu:", error);
+          });
+      }
+
+      function renderUser() {
+        var user = JSON.parse(localStorage.getItem("user"));
+        console.log("local storage: user ", JSON.stringify(user));
+        const greeting = document.getElementById("greeting");
+
+        if (greeting && user) {
+          greeting.textContent = `Xin chào, ${user.userName}!`;
+        } else {
+          greeting.textContent = "Xin chào, khách!";
+        }
+      }
+
+      function renderPage(studentList, pageNumber) {
+        const table = document.getElementById("paging-table");
+
+        // Xóa hết dữ liệu cũ trong bảng trước khi hiển thị mới
+        table.innerHTML = "";
+
+        // Tạo dòng tiêu đề của bảng
+        const headerRow = table.insertRow();
+        for (const key in rowHeader) {
+          const headerCell = document.createElement("th");
+          headerCell.textContent = rowHeader[key];
+          headerRow.appendChild(headerCell);
+        }
+
+        const start = (pageNumber - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const currentPageData = studentList.slice(start, end);
+
+        // Thêm dữ liệu vào bảng
+        var num = start + 1;
+        currentPageData.forEach((item) => {
+          const row = table.insertRow();
+          var cell = row.insertCell();
+          cell.textContent = num.toString();
+
+          cell = row.insertCell();
+          cell.textContent = item.studentCode;
+
+          cell = row.insertCell();
+          cell.textContent = item.studentName;
+
+          cell = row.insertCell();
+          cell.textContent = item.dateOfBirth;
+
+          cell = row.insertCell();
+          cell.textContent = item.address;
+
+          cell = row.insertCell();
+          cell.textContent = item.averageScore;
+
+          cell = row.insertCell();
+          cell.innerHTML = `
+          <button onclick="editStudent(${item.studentId})">Edit</button> -
+          <button onclick="deleteStudent(${item.studentId})">Delete</button>
+          `;
+
+          num += 1;
+        });
+
+        currentPage = pageNumber;
+      }
+
+      function renderPaginationButtons(studentList) {
+        const container = document.querySelector(".pagination");
+        const totalPages = Math.ceil(studentList.length / itemsPerPage);
+
+        // Xóa các nút cũ trước khi tạo lại
+        container.innerHTML = "";
+
+        // Hàm để đánh dấu button là active hoặc unactive
+        function setActiveButton(button) {
+          const buttons = container.querySelectorAll("a");
+          buttons.forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+        }
+
+        // Thêm button cho trang đầu tiên
+        const firstPage = document.createElement("a");
+        firstPage.textContent = "First";
+        firstPage.href = "#";
+        firstPage.addEventListener("click", () => {
+          renderPage(studentList, 1);
+          setActiveButton(document.getElementById("page1"));
+        });
+        container.appendChild(firstPage);
+
+        // Thêm button cho trang trước đó (nếu có)
+        const prevPage = document.createElement("a");
+        prevPage.textContent = "Prev";
+        prevPage.href = "#";
+        prevPage.addEventListener("click", () => {
+          if (currentPage > 1) {
+            renderPage(studentList, currentPage - 1);
+            setActiveButton(
+              document.getElementById("page" + currentPage.toString())
+            );
+          }
+        });
+        container.appendChild(prevPage);
+
+        // Thêm button cho từng trang con
+        for (let i = 1; i <= totalPages; i++) {
+          const button = document.createElement("a");
+          button.textContent = i;
+          button.href = "#";
+          button.id = "page" + i;
+          button.addEventListener("click", () => {
+            renderPage(studentList, i);
+            setActiveButton(button);
+          });
+          container.appendChild(button);
+        }
+
+        // Thêm button cho trang tiếp theo (nếu có)
+        const nextPage = document.createElement("a");
+        nextPage.textContent = "Next";
+        nextPage.href = "#";
+        nextPage.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+            renderPage(studentList, currentPage + 1);
+            setActiveButton(
+              document.getElementById("page" + currentPage.toString())
+            );
+          }
+        });
+        container.appendChild(nextPage);
+
+        // Thêm button cho trang cuối cùng
+        const lastPage = document.createElement("a");
+        lastPage.textContent = "Last";
+        lastPage.href = "#";
+        lastPage.addEventListener("click", () => {
+          renderPage(studentList, totalPages);
+          setActiveButton(document.getElementById("page" + totalPages));
+        });
+        container.appendChild(lastPage);
+      }
+
+      function search() {
+        var searchList = [];
+
+        var searchName = document.getElementById("studentName").value;
+        var studentCode = document.getElementById("studentCode").value;
+        var dateOfBirth = document.getElementById("birthday").value;
+
+        console.log(
+          "name: ",
+          searchName,
+          " code: ",
+          studentCode,
+          " birthday: ",
+          dateOfBirth
+        );
+
+        studentList.forEach((student) => {
+          let studentName = student.studentName.toLowerCase();
+          let studentBirthday = null;
+          if (student.dateOfBirth != null) {
+            studentBirthday = convertDateFormat(student.dateOfBirth.toString());
+            console.log("birth ", studentBirthday);
+          }
+          if (
+            studentName.includes(searchName) ||
+            student.studentCode == studentCode ||
+            studentBirthday == dateOfBirth
+          ) {
+            searchList.push(student);
+          }
+        });
+
+        renderPage(searchList, 1);
+        renderPaginationButtons(searchList);
+        document.getElementById("page1").classList.add("active");
+      }
+
+      function editStudent(studentId) {
+        var student = null;
+        for (let s of studentList) {
+          if (s.studentId === studentId) {
+            student = s;
+            break;
+          }
+        }
+        localStorage.setItem("student", JSON.stringify(student));
+        location.replace("./student.html");
+      }
+
+      function deleteStudent(studentId) {
+        const apiUrl = `http://localhost:8080/student/${studentId}`;
+
+        fetch(apiUrl, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Student deleted:", data);
+            showNotify(data.message);
+            if (data.success) {
+              deleteStudentFromArray(studentList, studentId);
+              renderPage(studentList, currentPage);
+            }
+          })
+          .catch((error) => {
+            console.error("Error deleting student:", error);
+          });
+      }
+
+      function deleteStudentFromArray(students, studentIdToDelete) {
+        // Tìm vị trí của sinh viên có id cần xóa trong mảng
+        const index = students.findIndex(
+          (student) => student.studentId === studentIdToDelete
+        );
+
+        // Nếu tìm thấy sinh viên có id cần xóa
+        if (index !== -1) {
+          // Xóa sinh viên khỏi mảng
+          students.splice(index, 1);
+        }
+      }
+
+      function logout() {
+        localStorage.clear("user");
+        showNotify("đã đăng xuất");
+        setTimeout(location.replace("./login.html"), 2500);
+      }
+    </script>
   </body>
 </html>

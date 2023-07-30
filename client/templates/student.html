@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <title>Student</title>
     <link rel="stylesheet" href="/resources/css/style.css" />
+    <style>
+      .input-short {
+        width: 15%;
+      }
+      .input-medium {
+        width: 30%;
+        margin-right: 5px;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
@@ -101,5 +110,75 @@
         </div>
       </form>
     </div>
+
+    <!-- script js -->
+    <script src="/resources/js/script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const studentData = JSON.parse(localStorage.getItem("student"));
+        console.log("student ", studentData);
+        localStorage.removeItem("student");
+
+        if (studentData != null) {
+          document.getElementById("studentId").value = studentData.studentId;
+          document.getElementById("studentCode").value =
+            studentData.studentCode;
+          document.getElementById("studentName").value =
+            studentData.studentName;
+          document.getElementById("dateOfBirth").value = convertDateFormat(
+            studentData.dateOfBirth
+          );
+          document.getElementById("address").value = studentData.address;
+          document.getElementById("averageScore").value =
+            studentData.averageScore;
+
+          document.getElementById("studentInfoId").value =
+            studentData.studentInfoId;
+
+          document.getElementById("title").textContent = "Update";
+        } else {
+          document.getElementById("title").textContent = "Register";
+        }
+      });
+
+      // post form
+      function doPost(event) {
+        event.preventDefault();
+        const student = {};
+
+        student.studentInfoId = parseInt(
+          document.getElementById("studentInfoId").value,
+          10
+        );
+        student.studentId = parseInt(
+          document.getElementById("studentId").value,
+          10
+        );
+        student.studentCode = document.getElementById("studentCode").value;
+        student.studentName = document.getElementById("studentName").value;
+
+        var parts = document.getElementById("dateOfBirth").value.split("-");
+        student.dateOfBirth = parts[0] + "/" + parts[1] + "/" + parts[2];
+
+        student.address = document.getElementById("address").value;
+        student.averageScore = parseFloat(
+          document.getElementById("averageScore").value
+        );
+
+        fetch("http://localhost:8080/student/save", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(student),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Response from server:", data);
+            showNotify("đã lưu");
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+    </script>
   </body>
 </html>
