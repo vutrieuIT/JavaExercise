@@ -12,7 +12,6 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@IdClass(StudentInfoId.class)
 @Table(name = "student_info")
 public class StudentInfo {
     @Id
@@ -21,7 +20,6 @@ public class StudentInfo {
     private Integer infoId;
 
     @OneToOne
-    @Id
     @JoinColumn(name = "student_id")
     private Student student;
 
